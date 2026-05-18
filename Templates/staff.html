@@ -58,7 +58,7 @@
                                 غير محدد
                             {% endif %}
                         </td>
-                        <td>{{ staff_member.hire_date or 'غير محدد' }}</td>
+                        <td>{{ staff_member.hire_date|format_date }}</td>
                         <td>
                             <div class="btn-group" role="group">
                                 <button type="button" class="btn btn-sm btn-outline-primary" 

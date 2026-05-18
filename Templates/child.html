@@ -40,7 +40,7 @@
                         <td>
                             <strong>{{ child.first_name }} {{ child.last_name }}</strong>
                         </td>
-                        <td>{{ child.date_of_birth or 'غير محدد' }}</td>
+                        <td>{{ child.date_of_birth|format_date }}</td>
                         <td>
                             {% if child.gender == 'Male' %}
                                 <span class="badge bg-primary">ذكر</span>
@@ -172,7 +172,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">تاريخ الميلاد</label>
-                            <input type="date" class="form-control" name="date_of_birth" value="{{ child.date_of_birth or '' }}">
+                            <input type="date" class="form-control" name="date_of_birth" value="{{ child.date_of_birth|input_date }}">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">النوع</label>

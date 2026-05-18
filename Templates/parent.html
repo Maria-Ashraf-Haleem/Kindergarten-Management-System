@@ -44,7 +44,7 @@
                         </td>
                         <td>{{ parent.phone or 'غير محدد' }}</td>
                         <td>{{ parent.email or 'غير محدد' }}</td>
-                        <td>{{ parent.created_at[:10] if parent.created_at else 'غير محدد' }}</td>
+                        <td>{{ parent.created_at|format_date }}</td>
                         <td>
                             <div class="btn-group" role="group">
                                 <button type="button" class="btn btn-sm btn-outline-primary" 

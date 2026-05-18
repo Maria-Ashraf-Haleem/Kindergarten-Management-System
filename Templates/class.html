@@ -42,7 +42,7 @@
                         <td>{{ class.branch_name or 'غير محدد' }}</td>
                         <td>{{ class.max_capacity or '25' }}</td>
                         <td>{{ class.age_group or 'غير محدد' }}</td>
-                        <td>{{ class.created_at[:10] if class.created_at else 'غير محدد' }}</td>
+                        <td>{{ class.created_at|format_date }}</td>
                         <td>
                             <div class="btn-group" role="group">
                                 <button type="button" class="btn btn-sm btn-outline-primary" 

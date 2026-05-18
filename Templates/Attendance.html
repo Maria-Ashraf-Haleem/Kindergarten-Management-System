@@ -118,7 +118,7 @@
                             <strong>{{ record.child_name or 'غير محدد' }}</strong>
                         </td>
                         <td>{{ record.class_name or 'غير محدد' }}</td>
-                        <td>{{ record.date }}</td>
+                        <td>{{ record.date|format_date }}</td>
                         <td>
                             {% if record.status == 'Present' %}
                                 <span class="badge bg-success">حاضر</span>
@@ -319,7 +319,7 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">التاريخ</label>
-                            <input type="date" class="form-control" name="date" value="{{ record.date }}">
+                            <input type="date" class="form-control" name="date" value="{{ record.date|input_date }}">
                         </div>
                     </div>
                     <div class="row">
@@ -333,11 +333,11 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">وقت الوصول</label>
-                            <input type="time" class="form-control" name="check_in_time" value="{{ record.check_in_time or '' }}">
+                            <input type="time" class="form-control" name="check_in_time" value="{{ record.check_in_time|input_time }}">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">وقت الانصراف</label>
-                            <input type="time" class="form-control" name="check_out_time" value="{{ record.check_out_time or '' }}">
+                            <input type="time" class="form-control" name="check_out_time" value="{{ record.check_out_time|input_time }}">
                         </div>
                     </div>
                     <div class="mb-3">
