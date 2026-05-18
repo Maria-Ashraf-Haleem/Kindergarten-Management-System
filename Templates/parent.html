@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block title %}إدارة أولياء الأمور - نظام إدارة الحضانة{% endblock %}
+
+{% block head_extra %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h2 mb-0">إدارة أولياء الأمور</h1>
+        <p class="text-muted">إضافة وإدارة بيانات أولياء أمور الأطفال</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addParentModal">
+            <i class="fas fa-plus me-2"></i>إضافة ولي أمر جديد
+        </button>
+    </div>
+</div>
+
+<!-- Parents Table -->
+<div class="card">
+    <div class="card-body">
+        {% if parents %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>الرقم</th>
+                        <th>الاسم الكامل</th>
+                        <th>رقم الهاتف</th>
+                        <th>البريد الإلكتروني</th>
+                        <th>تاريخ التسجيل</th>
+                        <th width="200">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for parent in parents %}
+                    <tr>
+                        <td>{{ parent.parent_id }}</td>
+                        <td>
+                            <strong>{{ parent.first_name }} {{ parent.last_name }}</strong>
+                        </td>
+                        <td>{{ parent.phone or 'غير محدد' }}</td>
+                        <td>{{ parent.email or 'غير محدد' }}</td>
+                        <td>{{ parent.created_at[:10] if parent.created_at else 'غير محدد' }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editParentModal{{ parent.parent_id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteParentModal{{ parent.parent_id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">لا يوجد أولياء أمور مضافين بعد</h5>
+            <p class="text-muted">ابدأ بإضافة أول ولي أمر</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Parent Modal -->
+<div class="modal fade" id="addParentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('parent.add_parent') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة ولي أمر جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">الاسم الأول <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">الاسم الأخير <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">رقم الهاتف</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" placeholder="مثال: 01234567890">
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">البريد الإلكتروني</label>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="مثال: parent@email.com">
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">العنوان</label>
+                        <textarea class="form-control" id="address" name="address" rows="2" placeholder="العنوان الكامل"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ ولي الأمر</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Parent Modals -->
+{% if parents %}
+{% for parent in parents %}
+<div class="modal fade" id="editParentModal{{ parent.parent_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('parent.update_parent', id=parent.parent_id) }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل ولي الأمر: {{ parent.first_name }} {{ parent.last_name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الاسم الأول <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="first_name" value="{{ parent.first_name }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الاسم الأخير <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="last_name" value="{{ parent.last_name }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">رقم الهاتف</label>
+                        <input type="tel" class="form-control" name="phone" value="{{ parent.phone or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">البريد الإلكتروني</label>
+                        <input type="email" class="form-control" name="email" value="{{ parent.email or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">العنوان</label>
+                        <textarea class="form-control" name="address" rows="2">{{ parent.address or '' }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Parent Modal -->
+<div class="modal fade" id="deleteParentModal{{ parent.parent_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأكيد الحذف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">هل أنت متأكد من حذف ولي الأمر <strong>"{{ parent.first_name }} {{ parent.last_name }}"</strong>؟</p>
+                <small class="text-muted">هذا الإجراء لا يمكن التراجع عنه.</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <a href="{{ url_for('parent.delete_parent', id=parent.parent_id) }}" class="btn btn-danger">حذف ولي الأمر</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% endblock %}
+<style>
+.modal-content {
+    z-index: 1061 !important;
+    background-color: #fff !important;
+}
+.modal-body input, .modal-body textarea {
+    background-color: #fff !important;
+    pointer-events: auto !important;
+}
+</style>
+
+<script>
+document.querySelectorAll('.modal').forEach(modal => {
+    modal.addEventListener('shown.bs.modal', function() {
+        this.querySelector('input')?.focus();
+    });
+});
+</script>

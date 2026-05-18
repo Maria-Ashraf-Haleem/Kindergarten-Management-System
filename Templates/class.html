@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block title %}إدارة الفصول - نظام إدارة الحضانة{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h2 mb-0">إدارة الفصول</h1>
+        <p class="text-muted">إضافة وإدارة فصول الحضانة</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addClassModal">
+            <i class="fas fa-plus me-2"></i>إضافة فصل جديد
+        </button>
+    </div>
+</div>
+
+<!-- Classes Table -->
+<div class="card">
+    <div class="card-body">
+        {% if classes %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>الرقم</th>
+                        <th>اسم الفصل</th>
+                        <th>الفرع</th>
+                        <th>الحد الأقصى للطلاب</th>
+                        <th>الفئة العمرية</th>
+                        <th>تاريخ الإنشاء</th>
+                        <th width="200">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for class in classes %}
+                    <tr>
+                        <td>{{ class.class_id }}</td>
+                        <td>
+                            <strong>{{ class.name }}</strong>
+                        </td>
+                        <td>{{ class.branch_name or 'غير محدد' }}</td>
+                        <td>{{ class.max_capacity or '25' }}</td>
+                        <td>{{ class.age_group or 'غير محدد' }}</td>
+                        <td>{{ class.created_at[:10] if class.created_at else 'غير محدد' }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editClassModal{{ class.class_id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteClassModal{{ class.class_id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-chalkboard fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">لا توجد فصول مضافة بعد</h5>
+            <p class="text-muted">ابدأ بإضافة أول فصل</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Class Modal -->
+<div class="modal fade" id="addClassModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('classes.add_class') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة فصل جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">اسم الفصل <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="branch_id" class="form-label">الفرع</label>
+                        <select class="form-select" id="branch_id" name="branch_id">
+                            <option value="">اختر الفرع (اختياري)</option>
+                            {% for branch in branches %}
+                            <option value="{{ branch.branch_id }}">{{ branch.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="max_capacity" class="form-label">الحد الأقصى للطلاب</label>
+                        <input type="number" class="form-control" id="max_capacity" name="max_capacity" value="25" min="1" max="50">
+                    </div>
+                    <div class="mb-3">
+                        <label for="age_group" class="form-label">الفئة العمرية</label>
+                        <select class="form-select" id="age_group" name="age_group">
+                            <option value="">اختر الفئة العمرية</option>
+                            <option value="2-3 سنوات">2-3 سنوات</option>
+                            <option value="3-4 سنوات">3-4 سنوات</option>
+                            <option value="4-5 سنوات">4-5 سنوات</option>
+                            <option value="5-6 سنوات">5-6 سنوات</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ الفصل</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Class Modals -->
+{% for class in classes %}
+<div class="modal fade" id="editClassModal{{ class.class_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('classes.update_class', id=class.class_id) }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل الفصل: {{ class.name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">اسم الفصل <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="name" value="{{ class.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الفرع</label>
+                        <select class="form-select" name="branch_id">
+                            <option value="">اختر الفرع (اختياري)</option>
+                            {% for branch in branches %}
+                            <option value="{{ branch.branch_id }}" 
+                                    {% if branch.branch_id == class.branch_id %}selected{% endif %}>
+                                {{ branch.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الحد الأقصى للطلاب</label>
+                        <input type="number" class="form-control" name="max_capacity" 
+                               value="{{ class.max_capacity or 25 }}" min="1" max="50">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الفئة العمرية</label>
+                        <select class="form-select" name="age_group">
+                            <option value="">اختر الفئة العمرية</option>
+                            <option value="2-3 سنوات" {% if class.age_group == '2-3 سنوات' %}selected{% endif %}>2-3 سنوات</option>
+                            <option value="3-4 سنوات" {% if class.age_group == '3-4 سنوات' %}selected{% endif %}>3-4 سنوات</option>
+                            <option value="4-5 سنوات" {% if class.age_group == '4-5 سنوات' %}selected{% endif %}>4-5 سنوات</option>
+                            <option value="5-6 سنوات" {% if class.age_group == '5-6 سنوات' %}selected{% endif %}>5-6 سنوات</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Class Modal -->
+<div class="modal fade" id="deleteClassModal{{ class.class_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأكيد الحذف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">هل أنت متأكد من حذف الفصل <strong>"{{ class.name }}"</strong>؟</p>
+                <small class="text-muted">هذا الإجراء لا يمكن التراجع عنه.</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <a href="{{ url_for('classes.delete_class', id=class.class_id) }}" class="btn btn-danger">حذف الكلاس</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block head_extra %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+{% endblock %}

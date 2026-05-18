@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+
+{% block title %}إدارة الموظفين - نظام إدارة الحضانة{% endblock %}
+
+{% block head_extra %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h2 mb-0">إدارة الموظفين</h1>
+        <p class="text-muted">إضافة وإدارة بيانات موظفي الحضانة</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStaffModal">
+            <i class="fas fa-plus me-2"></i>إضافة موظف جديد
+        </button>
+    </div>
+</div>
+
+<!-- Staff Table -->
+<div class="card">
+    <div class="card-body">
+        {% if staff %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>الرقم</th>
+                        <th>الاسم الكامل</th>
+                        <th>المنصب</th>
+                        <th>الفرع</th>
+                        <th>رقم الهاتف</th>
+                        <th>البريد الإلكتروني</th>
+                        <th>الراتب</th>
+                        <th>تاريخ التوظيف</th>
+                        <th width="200">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for staff_member in staff %}
+                    <tr>
+                        <td>{{ staff_member.staff_id }}</td>
+                        <td>
+                            <strong>{{ staff_member.first_name }} {{ staff_member.last_name }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ staff_member.position }}</span>
+                        </td>
+                        <td>{{ staff_member.branch_name or 'غير محدد' }}</td>
+                        <td>{{ staff_member.phone or 'غير محدد' }}</td>
+                        <td>{{ staff_member.email or 'غير محدد' }}</td>
+                        <td>
+                            {% if staff_member.salary %}
+                                <span class="text-success fw-bold">{{ "%.2f"|format(staff_member.salary) }} جنيه</span>
+                            {% else %}
+                                غير محدد
+                            {% endif %}
+                        </td>
+                        <td>{{ staff_member.hire_date or 'غير محدد' }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editStaffModal{{ staff_member.staff_id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteStaffModal{{ staff_member.staff_id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-user-tie fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">لا يوجد موظفون مضافون بعد</h5>
+            <p class="text-muted">ابدأ بإضافة أول موظف</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Staff Modal -->
+<div class="modal fade" id="addStaffModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ url_for('staff.add_staff') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة موظف جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">الاسم الأول <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">الاسم الأخير <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="position" class="form-label">المنصب <span class="text-danger">*</span></label>
+                            <select class="form-select" id="position" name="position" required>
+                                <option value="">اختر المنصب</option>
+                                <option value="مدير">مدير</option>
+                                <option value="معلم">معلم</option>
+                                <option value="مساعد معلم">مساعد معلم</option>
+                                <option value="مشرف">مشرف</option>
+                                <option value="ممرض">ممرض</option>
+                                <option value="أخصائي نفسي">أخصائي نفسي</option>
+                                <option value="عامل نظافة">عامل نظافة</option>
+                                <option value="طباخ">طباخ</option>
+                                <option value="حارس">حارس</option>
+                                <option value="أخرى">أخرى</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="branch_id" class="form-label">الفرع</label>
+                            <select class="form-select" id="branch_id" name="branch_id">
+                                <option value="">اختر الفرع (اختياري)</option>
+                                {% for branch in branches %}
+                                <option value="{{ branch.branch_id }}">{{ branch.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">رقم الهاتف</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" placeholder="مثال: 01234567890">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">البريد الإلكتروني</label>
+                            <input type="email" class="form-control" id="email" name="email" placeholder="مثال: staff@email.com">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="salary" class="form-label">الراتب (جنيه)</label>
+                        <input type="number" class="form-control" id="salary" name="salary" step="0.01" min="0" placeholder="مثال: 3000.00">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ الموظف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Staff Modals -->
+{% if staff %}
+{% for staff_member in staff %}
+<div class="modal fade" id="editStaffModal{{ staff_member.staff_id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ url_for('staff.update_staff', id=staff_member.staff_id) }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل الموظف: {{ staff_member.first_name }} {{ staff_member.last_name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الاسم الأول <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="first_name" value="{{ staff_member.first_name }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الاسم الأخير <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="last_name" value="{{ staff_member.last_name }}" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">المنصب <span class="text-danger">*</span></label>
+                            <select class="form-select" name="position" required>
+                                <option value="">اختر المنصب</option>
+                                <option value="مدير" {% if staff_member.position == 'مدير' %}selected{% endif %}>مدير</option>
+                                <option value="معلم" {% if staff_member.position == 'معلم' %}selected{% endif %}>معلم</option>
+                                <option value="مساعد معلم" {% if staff_member.position == 'مساعد معلم' %}selected{% endif %}>مساعد معلم</option>
+                                <option value="مشرف" {% if staff_member.position == 'مشرف' %}selected{% endif %}>مشرف</option>
+                                <option value="ممرض" {% if staff_member.position == 'ممرض' %}selected{% endif %}>ممرض</option>
+                                <option value="أخصائي نفسي" {% if staff_member.position == 'أخصائي نفسي' %}selected{% endif %}>أخصائي نفسي</option>
+                                <option value="عامل نظافة" {% if staff_member.position == 'عامل نظافة' %}selected{% endif %}>عامل نظافة</option>
+                                <option value="طباخ" {% if staff_member.position == 'طباخ' %}selected{% endif %}>طباخ</option>
+                                <option value="حارس" {% if staff_member.position == 'حارس' %}selected{% endif %}>حارس</option>
+                                <option value="أخرى" {% if staff_member.position == 'أخرى' %}selected{% endif %}>أخرى</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الفرع</label>
+                            <select class="form-select" name="branch_id">
+                                <option value="">اختر الفرع (اختياري)</option>
+                                {% for branch in branches %}
+                                <option value="{{ branch.branch_id }}" 
+                                        {% if branch.branch_id == staff_member.branch_id %}selected{% endif %}>
+                                    {{ branch.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">رقم الهاتف</label>
+                            <input type="tel" class="form-control" name="phone" value="{{ staff_member.phone or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">البريد الإلكتروني</label>
+                            <input type="email" class="form-control" name="email" value="{{ staff_member.email or '' }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الراتب (جنيه)</label>
+                        <input type="number" class="form-control" name="salary" 
+                               value="{{ staff_member.salary or '' }}" step="0.01" min="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Staff Modal -->
+<div class="modal fade" id="deleteStaffModal{{ staff_member.staff_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأكيد الحذف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">هل أنت متأكد من حذف الموظف <strong>"{{ staff_member.first_name }} {{ staff_member.last_name }}"</strong>؟</p>
+                <small class="text-muted">هذا الإجراء لا يمكن التراجع عنه.</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <a href="{{ url_for('staff.delete_staff', id=staff_member.staff_id) }}" class="btn btn-danger">حذف الموظف</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+.modal-content {
+    z-index: 1061 !important;
+    background-color: #fff !important;
+}
+.modal-body input, .modal-body textarea, .modal-body select {
+    background-color: #fff !important;
+    pointer-events: auto !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('shown.bs.modal', function() {
+            const firstInput = this.querySelector('input:not([type="hidden"]), select');
+            if (firstInput) {
+                setTimeout(() => firstInput.focus(), 150);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

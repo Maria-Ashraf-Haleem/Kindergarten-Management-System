@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+
+{% block title %}إدارة الفروع - نظام إدارة الحضانة{% endblock %}
+
+{% block head_extra %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h2 mb-0">إدارة الفروع</h1>
+        <p class="text-muted">إضافة وإدارة فروع الحضانة</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBranchModal">
+            <i class="fas fa-plus me-2"></i>إضافة فرع جديد
+        </button>
+    </div>
+</div>
+
+<!-- Branches Table -->
+<div class="card">
+    <div class="card-body">
+        {% if branches %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>الرقم</th>
+                        <th>اسم الفرع</th>
+                        <th>العنوان</th>
+                        <th>رقم الهاتف</th>
+                        <th>عدد الكلاسات</th>
+                        <th>عدد الموظفين</th>
+                        <th>تاريخ الإنشاء</th>
+                        <th width="200">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for branch in branches %}
+                    <tr>
+                        <td>{{ branch.branch_id }}</td>
+                        <td>
+                            <strong>{{ branch.name }}</strong>
+                        </td>
+                        <td>{{ branch.address or 'غير محدد' }}</td>
+                        <td>{{ branch.phone or 'غير محدد' }}</td>
+                        <td>
+                            <span class="badge bg-info">{{ branch.classes_count }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-success">{{ branch.staff_count }}</span>
+                        </td>
+                        <td>{{ branch.created_at[:10] if branch.created_at else 'غير محدد' }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editBranchModal{{ branch.branch_id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteBranchModal{{ branch.branch_id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-building fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">لا توجد فروع مضافة بعد</h5>
+            <p class="text-muted">ابدأ بإضافة أول فرع</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Branch Modal -->
+<div class="modal fade" id="addBranchModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('branch.add_branch') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة فرع جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">اسم الفرع <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required placeholder="مثال: الفرع الرئيسي">
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">العنوان</label>
+                        <textarea class="form-control" id="address" name="address" rows="2" placeholder="العنوان الكامل للفرع"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">رقم الهاتف</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" placeholder="مثال: 01234567890">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ الفرع</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Branch Modals -->
+{% if branches %}
+{% for branch in branches %}
+<div class="modal fade" id="editBranchModal{{ branch.branch_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('branch.update_branch', id=branch.branch_id) }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل الفرع: {{ branch.name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">اسم الفرع <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="name" value="{{ branch.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">العنوان</label>
+                        <textarea class="form-control" name="address" rows="2">{{ branch.address or '' }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">رقم الهاتف</label>
+                        <input type="tel" class="form-control" name="phone" value="{{ branch.phone or '' }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Branch Modal -->
+<div class="modal fade" id="deleteBranchModal{{ branch.branch_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأكيد الحذف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">هل أنت متأكد من حذف الفرع <strong>"{{ branch.name }}"</strong>؟</p>
+                {% if branch.classes_count > 0 or branch.staff_count > 0 %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>تحذير:</strong> هذا الفرع يحتوي على:
+                    <ul class="mb-0 mt-2">
+                        {% if branch.classes_count > 0 %}
+                        <li>{{ branch.classes_count }} كلاس</li>
+                        {% endif %}
+                        {% if branch.staff_count > 0 %}
+                        <li>{{ branch.staff_count }} موظف</li>
+                        {% endif %}
+                    </ul>
+                    <small class="d-block mt-2">يرجى نقل الكلاسات والموظفين إلى فرع آخر قبل الحذف.</small>
+                </div>
+                {% else %}
+                <small class="text-muted">هذا الإجراء لا يمكن التراجع عنه.</small>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                {% if branch.classes_count == 0 and branch.staff_count == 0 %}
+                <a href="{{ url_for('branch.delete_branch', id=branch.branch_id) }}" class="btn btn-danger">حذف الفرع</a>
+                {% else %}
+                <button type="button" class="btn btn-danger" disabled>لا يمكن الحذف</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+.modal-content {
+    z-index: 1061 !important;
+    background-color: #fff !important;
+}
+.modal-body input, .modal-body textarea {
+    background-color: #fff !important;
+    pointer-events: auto !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('shown.bs.modal', function() {
+            const firstInput = this.querySelector('input:not([type="hidden"]), textarea');
+            if (firstInput) {
+                setTimeout(() => firstInput.focus(), 150);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

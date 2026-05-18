@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block title %}إدارة الأطفال - نظام إدارة الحضانة{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h2 mb-0">إدارة الأطفال</h1>
+        <p class="text-muted">إضافة وإدارة بيانات الأطفال في الحضانة</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addChildModal">
+            <i class="fas fa-plus me-2"></i>إضافة طفل جديد
+        </button>
+    </div>
+</div>
+
+<!-- Children Table -->
+<div class="card">
+    <div class="card-body">
+        {% if children %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>الرقم</th>
+                        <th>الاسم الكامل</th>
+                        <th>تاريخ الميلاد</th>
+                        <th>النوع</th>
+                        <th>ولي الأمر</th>
+                        <th>الكلاس</th>
+                        <th>الفرع</th>
+                        <th width="200">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for child in children %}
+                    <tr>
+                        <td>{{ child.child_id }}</td>
+                        <td>
+                            <strong>{{ child.first_name }} {{ child.last_name }}</strong>
+                        </td>
+                        <td>{{ child.date_of_birth or 'غير محدد' }}</td>
+                        <td>
+                            {% if child.gender == 'Male' %}
+                                <span class="badge bg-primary">ذكر</span>
+                            {% else %}
+                                <span class="badge bg-danger">أنثى</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ child.parent_name }}</td>
+                        <td>{{ child.class_name }}</td>
+                        <td>{{ child.branch_name }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editChildModal{{ child.child_id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteChildModal{{ child.child_id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-child fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">لا يوجد أطفال مضافين بعد</h5>
+            <p class="text-muted">ابدأ بإضافة أول طفل في الحضانة</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Child Modal -->
+<div class="modal fade" id="addChildModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('child.add_child') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة طفل جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">الاسم الأول <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">الاسم الأخير <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="date_of_birth" class="form-label">تاريخ الميلاد</label>
+                            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="gender" class="form-label">النوع</label>
+                            <select class="form-select" id="gender" name="gender">
+                                <option value="Male">ذكر</option>
+                                <option value="Female">أنثى</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="parent_id" class="form-label">ولي الأمر</label>
+                            <select class="form-select" id="parent_id" name="parent_id">
+                                <option value="">اختر ولي الأمر (اختياري)</option>
+                                {% for parent in parents %}
+                                <option value="{{ parent.parent_id }}">{{ parent.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="class_id" class="form-label">الكلاس</label>
+                            <select class="form-select" id="class_id" name="class_id">
+                                <option value="">اختر الكلاس (اختياري)</option>
+                                {% for class in classes %}
+                                <option value="{{ class.class_id }}">
+                                    {{ class.name }}
+                                    {% if class.branch_name %}
+                                        - {{ class.branch_name }}
+                                    {% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ الطفل</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Child Modals -->
+{% for child in children %}
+<div class="modal fade" id="editChildModal{{ child.child_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('child.update_child', id=child.child_id) }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل الطفل: {{ child.first_name }} {{ child.last_name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الاسم الأول <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="first_name" value="{{ child.first_name }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الاسم الأخير <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="last_name" value="{{ child.last_name }}" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تاريخ الميلاد</label>
+                            <input type="date" class="form-control" name="date_of_birth" value="{{ child.date_of_birth or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">النوع</label>
+                            <select class="form-select" name="gender">
+                                <option value="Male" {% if child.gender == 'Male' %}selected{% endif %}>ذكر</option>
+                                <option value="Female" {% if child.gender == 'Female' %}selected{% endif %}>أنثى</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">ولي الأمر</label>
+                            <select class="form-select" name="parent_id">
+                                <option value="">اختر ولي الأمر (اختياري)</option>
+                                {% for parent in parents %}
+                                <option value="{{ parent.parent_id }}" 
+                                        {% if parent.parent_id == child.parent_id %}selected{% endif %}>
+                                    {{ parent.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الكلاس</label>
+                            <select class="form-select" name="class_id">
+                                <option value="">اختر الكلاس (اختياري)</option>
+                                {% for class in classes %}
+                                <option value="{{ class.class_id }}" 
+                                        {% if class.class_id == child.class_id %}selected{% endif %}>
+                                    {{ class.name }}
+                                    {% if class.branch_name %}
+                                        - {{ class.branch_name }}
+                                    {% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Child Modal -->
+<div class="modal fade" id="deleteChildModal{{ child.child_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأكيد الحذف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">هل أنت متأكد من حذف الطفل <strong>"{{ child.first_name }} {{ child.last_name }}"</strong>؟</p>
+                <small class="text-muted">هذا الإجراء لا يمكن التراجع عنه.</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <a href="{{ url_for('child.delete_child', id=child.child_id) }}" class="btn btn-danger">حذف الطفل</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block head_extra %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+{% endblock %}

@@ -1,0 +1,459 @@
+{% extends 'base.html' %}
+
+{% block title %}لوحة التحكم - نظام إدارة الحضانة{% endblock %}
+
+{% block content %}
+<!-- Welcome Section -->
+<div class="welcome-card mb-5">
+    <h1 class="hero-title">مرحباً بك في لوحة التحكم</h1>
+    <p class="hero-subtitle">نظرة شاملة على نشاط حضانة الأمل</p>
+    <div class="hero-decoration">
+        <i class="fas fa-heart"></i>
+        <i class="fas fa-star"></i>
+        <i class="fas fa-heart"></i>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="section-header">
+    <h2 class="section-title">الإحصائيات</h2>
+    <div class="section-line"></div>
+</div>
+
+<div class="row g-4 mb-5" id="stats-container">
+    <!-- Branches Card -->
+    <div class="col-xl-3 col-md-4 col-sm-6">
+        <div class="card stat-card bg-branches h-100" data-count="{{ stats.branches }}">
+            <div class="card-body text-center position-relative">
+                <div class="icon-wrapper">
+                    <i class="fas fa-building"></i>
+                </div>
+                <h3 class="card-title mb-2 counter">0</h3>
+                <p class="card-text">الفروع</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Classes Card -->
+    <div class="col-xl-3 col-md-4 col-sm-6">
+        <div class="card stat-card bg-classes h-100" data-count="{{ stats.classes }}">
+            <div class="card-body text-center position-relative">
+                <div class="icon-wrapper">
+                    <i class="fas fa-chalkboard"></i>
+                </div>
+                <h3 class="card-title mb-2 counter">0</h3>
+                <p class="card-text">الفصول</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Children Card -->
+    <div class="col-xl-3 col-md-4 col-sm-6">
+        <div class="card stat-card bg-children h-100" data-count="{{ stats.children }}">
+            <div class="card-body text-center position-relative">
+                <div class="icon-wrapper">
+                    <i class="fas fa-child"></i>
+                </div>
+                <h3 class="card-title mb-2 counter">0</h3>
+                <p class="card-text">الأطفال</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Parents Card -->
+    <div class="col-xl-3 col-md-4 col-sm-6">
+        <div class="card stat-card bg-parents h-100" data-count="{{ stats.parents }}">
+            <div class="card-body text-center position-relative">
+                <div class="icon-wrapper">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3 class="card-title mb-2 counter">0</h3>
+                <p class="card-text">أولياء الأمور</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Staff Card -->
+    <div class="col-xl-3 col-md-4 col-sm-6">
+        <div class="card stat-card bg-staff h-100" data-count="{{ stats.staff }}">
+            <div class="card-body text-center position-relative">
+                <div class="icon-wrapper">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <h3 class="card-title mb-2 counter">0</h3>
+                <p class="card-text">الموظفون</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attendance Card -->
+    <div class="col-xl-3 col-md-4 col-sm-6">
+        <div class="card stat-card bg-attendance h-100" data-count="{{ stats.today_attendance }}">
+            <div class="card-body text-center position-relative">
+                <div class="icon-wrapper">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <h3 class="card-title mb-2 counter">0</h3>
+                <p class="card-text">حضور اليوم</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Fees Card -->
+    <div class="col-xl-3 col-md-4 col-sm-6">
+        <div class="card stat-card bg-fees h-100" data-count="{{ stats.fees }}">
+            <div class="card-body text-center position-relative">
+                <div class="icon-wrapper">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <h3 class="card-title mb-2 counter">0</h3>
+                <p class="card-text">الرسوم</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Section -->
+<div class="section-header">
+    <h2 class="section-title">الإجراءات السريعة</h2>
+    <div class="section-line"></div>
+</div>
+
+<div class="row g-4 mb-5" id="actions-container">
+    <!-- Add Child -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card action-card h-100">
+            <div class="card-body">
+                <div class="action-icon bg-primary">
+                    <i class="fas fa-baby"></i>
+                </div>
+                <h5 class="card-title mt-3">إضافة طفل جديد</h5>
+                <p class="card-text text-muted">تسجيل طفل جديد في الحضانة بسهولة وسرعة</p>
+                <a href="{{ url_for('child.show_children') }}" class="btn btn-primary">
+                    <span>ابدأ الآن</span>
+                    <i class="fas fa-arrow-left ms-2"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attendance -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card action-card h-100">
+            <div class="card-body">
+                <div class="action-icon bg-success">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <h5 class="card-title mt-3">تسجيل الحضور</h5>
+                <p class="card-text text-muted">تسجيل حضور وغياب الأطفال يومياً</p>
+                <a href="{{ url_for('attendance.show_attendance') }}" class="btn btn-success">
+                    <span>ابدأ الآن</span>
+                    <i class="fas fa-arrow-left ms-2"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Fees -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card action-card h-100">
+            <div class="card-body">
+                <div class="action-icon bg-warning">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <h5 class="card-title mt-3">إدارة الرسوم</h5>
+                <p class="card-text text-muted">متابعة المدفوعات والرسوم المستحقة</p>
+                <a href="{{ url_for('fee.show_fees') }}" class="btn btn-warning">
+                    <span>ابدأ الآن</span>
+                    <i class="fas fa-arrow-left ms-2"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Classes -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card action-card h-100">
+            <div class="card-body">
+                <div class="action-icon bg-info">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <h5 class="card-title mt-3">إدارة الفصول</h5>
+                <p class="card-text text-muted">إضافة وإدارة فصول الحضانة</p>
+                <a href="{{ url_for('classes.show_classes') }}" class="btn btn-info">
+                    <span>ابدأ الآن</span>
+                    <i class="fas fa-arrow-left ms-2"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Parents -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card action-card h-100">
+            <div class="card-body">
+                <div class="action-icon bg-primary">
+                    <i class="fas fa-user-friends"></i>
+                </div>
+                <h5 class="card-title mt-3">إدارة أولياء الأمور</h5>
+                <p class="card-text text-muted">عرض وإدارة بيانات أولياء الأمور</p>
+                <a href="{{ url_for('parent.show_parents') }}" class="btn btn-primary">
+                    <span>ابدأ الآن</span>
+                    <i class="fas fa-arrow-left ms-2"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Staff -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card action-card h-100">
+            <div class="card-body">
+                <div class="action-icon bg-success">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <h5 class="card-title mt-3">إدارة الموظفين</h5>
+                <p class="card-text text-muted">عرض وإدارة بيانات الموظفين</p>
+                <a href="{{ url_for('staff.show_staff') }}" class="btn btn-success">
+                    <span>ابدأ الآن</span>
+                    <i class="fas fa-arrow-left ms-2"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Branches -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card action-card h-100">
+            <div class="card-body">
+                <div class="action-icon bg-warning">
+                    <i class="fas fa-building"></i>
+                </div>
+                <h5 class="card-title mt-3">إدارة الفروع</h5>
+                <p class="card-text text-muted">عرض وإدارة فروع الحضانة</p>
+                <a href="{{ url_for('branch.show_branches') }}" class="btn btn-warning">
+                    <span>ابدأ الآن</span>
+                    <i class="fas fa-arrow-left ms-2"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reports -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card action-card h-100">
+            <div class="card-body">
+                <div class="action-icon bg-info">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h5 class="card-title mt-3">التقارير</h5>
+                <p class="card-text text-muted">عرض التقارير والإحصائيات التفصيلية</p>
+                <a href="#" class="btn btn-info">
+                    <span>ابدأ الآن</span>
+                    <i class="fas fa-arrow-left ms-2"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity & Calendar Section -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card activity-card">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background: transparent; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-history me-2" style="color: #98fb98;"></i>النشاط الحديث
+                </h5>
+                <button class="btn btn-sm btn-primary">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="activity-timeline">
+                    {% if recent_activities %}
+                        {% for activity in recent_activities %}
+                            <div class="timeline-item">
+                                {% if activity.activity_type == 'new_child' %}
+                                    <div class="timeline-icon bg-success">
+                                        <i class="fas fa-user-plus"></i>
+                                    </div>
+                                {% elif activity.activity_type == 'attendance' %}
+                                    <div class="timeline-icon bg-info">
+                                        <i class="fas fa-calendar-check"></i>
+                                    </div>
+                                {% elif activity.activity_type == 'payment' %}
+                                    <div class="timeline-icon bg-warning">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    </div>
+                                {% else %}
+                                    <div class="timeline-icon bg-success">
+                                        <i class="fas fa-circle"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="timeline-content">
+                                    <h6>{{ activity.description }}</h6>
+                                    <small class="text-muted">{{ activity.timestamp | time_ago }}</small>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">لا توجد نشاطات حديثة</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card weather-card">
+            <div class="card-header" style="background: transparent; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-alt me-2" style="color: #add8e6;"></i>التاريخ اليوم
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="current-date">
+                    <div class="date-display">
+                        <span class="day" id="current-day">الأحد</span>
+                        <span class="date" id="current-date">25</span>
+                        <span class="month" id="current-month">ديسمبر 2024</span>
+                    </div>
+                </div>
+                
+                <hr style="border-color: rgba(0,0,0,0.05);">
+                
+                <div class="quick-stats">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="mini-stat">
+                                <i class="fas fa-check-circle" style="color: #98fb98;"></i>
+                                <span>حاضر: <strong>{{ stats.today_attendance }}</strong></span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="mini-stat">
+                                <i class="fas fa-times-circle" style="color: #ffb6c1;"></i>
+                                <span>غائب: <strong>{{ stats.children - stats.today_attendance }}</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block head_extra %}
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Counter Animation
+    function animateCounters() {
+        const counters = document.querySelectorAll('.counter');
+        const speed = 50;
+        
+        counters.forEach((counter, index) => {
+            const target = parseInt(counter.closest('.stat-card').getAttribute('data-count')) || 0;
+            const increment = Math.max(1, Math.ceil(target / speed));
+            let current = 0;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    counter.textContent = target;
+                    clearInterval(timer);
+                    counter.style.animation = 'pulse 0.5s ease-in-out';
+                } else {
+                    counter.textContent = current;
+                }
+            }, 30);
+        });
+    }
+    
+    // Start animation after page load
+    setTimeout(animateCounters, 500);
+    
+    // Update Date
+    function updateDate() {
+        const now = new Date();
+        const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+        const months = [
+            'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+            'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+        ];
+        
+        document.getElementById('current-day').textContent = days[now.getDay()];
+        document.getElementById('current-date').textContent = now.getDate();
+        document.getElementById('current-month').textContent = months[now.getMonth()] + ' ' + now.getFullYear();
+    }
+    
+    updateDate();
+    
+    // Stagger animation for cards
+    const statCards = document.querySelectorAll('.stat-card');
+    statCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px) scale(0.9)';
+        card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+        
+        setTimeout(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0) scale(1)';
+        }, 200 + (index * 100));
+    });
+    
+    const actionCards = document.querySelectorAll('.action-card');
+    actionCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(40px)';
+        card.style.transition = 'all 0.7s cubic-bezier(0.4, 0, 0.2, 1)';
+        
+        setTimeout(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, 800 + (index * 100));
+    });
+    
+    // Timeline items animation
+    const timelineItems = document.querySelectorAll('.timeline-item');
+    timelineItems.forEach((item, index) => {
+        item.style.opacity = '0';
+        item.style.transform = 'translateX(-20px)';
+        item.style.transition = 'all 0.5s ease';
+        
+        setTimeout(() => {
+            item.style.opacity = '1';
+            item.style.transform = 'translateX(0)';
+        }, 1200 + (index * 200));
+    });
+    
+    // Refresh button
+    const refreshBtn = document.querySelector('.btn-sm.btn-primary');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            icon.classList.add('fa-spin');
+            
+            setTimeout(() => {
+                icon.classList.remove('fa-spin');
+                const counters = document.querySelectorAll('.counter');
+                counters.forEach(counter => {
+                    counter.textContent = '0';
+                });
+                setTimeout(animateCounters, 200);
+            }, 2000);
+        });
+    }
+});
+</script>
+{% endblock %}

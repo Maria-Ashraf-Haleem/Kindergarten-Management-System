@@ -1,0 +1,534 @@
+{% extends 'base.html' %}
+
+{% block title %}إدارة الحضور والغياب - نظام إدارة الحضانة{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h2 mb-0">إدارة الحضور والغياب</h1>
+        <p class="text-muted">تسجيل ومتابعة حضور الأطفال اليومي</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAttendanceModal">
+            <i class="fas fa-plus me-2"></i>تسجيل حضور جديد
+        </button>
+        <button type="button" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#bulkAttendanceModal">
+            <i class="fas fa-users me-2"></i>تسجيل جماعي
+        </button>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                <h4 class="mb-0">{{ attendance_records|selectattr('status', 'equalto', 'Present')|list|length }}</h4>
+                <small>حاضر اليوم</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-times-circle fa-2x mb-2"></i>
+                <h4 class="mb-0">{{ attendance_records|selectattr('status', 'equalto', 'Absent')|list|length }}</h4>
+                <small>غائب اليوم</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-clock fa-2x mb-2"></i>
+                <h4 class="mb-0">{{ attendance_records|selectattr('status', 'equalto', 'Late')|list|length }}</h4>
+                <small>متأخر اليوم</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-child fa-2x mb-2"></i>
+                <h4 class="mb-0">{{ attendance_records|length }}</h4>
+                <small>إجمالي السجلات</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <label class="form-label">فلترة بالتاريخ</label>
+                <input type="date" class="form-control" id="dateFilter" value="">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">فلترة بالحالة</label>
+                <select class="form-select" id="statusFilter">
+                    <option value="">جميع الحالات</option>
+                    <option value="Present">حاضر</option>
+                    <option value="Absent">غائب</option>
+                    <option value="Late">متأخر</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">بحث بالاسم</label>
+                <input type="text" class="form-control" id="nameSearch" placeholder="ابحث عن طفل...">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary me-2" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> مسح الفلاتر
+                </button>
+                <button type="button" class="btn btn-outline-primary" onclick="exportAttendance()">
+                    <i class="fas fa-download"></i> تصدير
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Table -->
+<div class="card">
+    <div class="card-body">
+        {% if attendance_records %}
+        <div class="table-responsive">
+            <table class="table table-hover" id="attendanceTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>الرقم</th>
+                        <th>اسم الطفل</th>
+                        <th>الكلاس</th>
+                        <th>التاريخ</th>
+                        <th>الحالة</th>
+                        <th>وقت الوصول</th>
+                        <th>وقت الانصراف</th>
+                        <th>ملاحظات</th>
+                        <th width="200">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in attendance_records %}
+                    <tr>
+                        <td>{{ record.attendance_id }}</td>
+                        <td>
+                            <strong>{{ record.child_name or 'غير محدد' }}</strong>
+                        </td>
+                        <td>{{ record.class_name or 'غير محدد' }}</td>
+                        <td>{{ record.date }}</td>
+                        <td>
+                            {% if record.status == 'Present' %}
+                                <span class="badge bg-success">حاضر</span>
+                            {% elif record.status == 'Absent' %}
+                                <span class="badge bg-danger">غائب</span>
+                            {% elif record.status == 'Late' %}
+                                <span class="badge bg-warning">متأخر</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ record.check_in_time or 'غير محدد' }}</td>
+                        <td>{{ record.check_out_time or 'غير محدد' }}</td>
+                        <td>{{ record.notes or '' }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editAttendanceModal{{ record.attendance_id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteAttendanceModal{{ record.attendance_id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-calendar-check fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">لا توجد سجلات حضور بعد</h5>
+            <p class="text-muted">ابدأ بتسجيل أول حضور للأطفال</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Attendance Modal -->
+<div class="modal fade" id="addAttendanceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ url_for('attendance.add_attendance') }}" method="POST" id="addAttendanceForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">تسجيل حضور جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="child_id" class="form-label">اسم الطفل <span class="text-danger">*</span></label>
+                            <select class="form-select" id="child_id" name="child_id" required>
+                                <option value="">اختر الطفل</option>
+                                {% for child in children %}
+                                <option value="{{ child.child_id }}">{{ child.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="date" class="form-label">التاريخ <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="date" name="date" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="status" class="form-label">الحالة <span class="text-danger">*</span></label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="Present">حاضر</option>
+                                <option value="Absent">غائب</option>
+                                <option value="Late">متأخر</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="check_in_time" class="form-label">وقت الوصول</label>
+                            <input type="time" class="form-control" id="check_in_time" name="check_in_time">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="check_out_time" class="form-label">وقت الانصراف</label>
+                            <input type="time" class="form-control" id="check_out_time" name="check_out_time">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">ملاحظات</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="أي ملاحظات إضافية..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ الحضور</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Attendance Modal -->
+<div class="modal fade" id="bulkAttendanceModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <form action="{{ url_for('attendance.bulk_attendance') }}" method="POST" id="bulkAttendanceForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">تسجيل حضور جماعي</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="bulk_date" class="form-label">التاريخ <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="bulk_date" name="date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex gap-2 mt-4">
+                                <button type="button" class="btn btn-sm btn-success" onclick="markAll('Present')">
+                                    <i class="fas fa-check"></i> حاضر للكل
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" onclick="markAll('Absent')">
+                                    <i class="fas fa-times"></i> غائب للكل
+                                </button>
+                                <button type="button" class="btn btn-sm btn-secondary" onclick="clearAll()">
+                                    <i class="fas fa-undo"></i> مسح التحديد
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>اسم الطفل</th>
+                                    <th>الكلاس</th>
+                                    <th>الحالة</th>
+                                    <th>وقت الوصول</th>
+                                    <th>ملاحظات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for child in children %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ child.name }}</strong>
+                                        <input type="hidden" name="child_ids[]" value="{{ child.child_id }}">
+                                    </td>
+                                    <td>{{ child.class_name or 'غير محدد' }}</td>
+                                    <td>
+                                        <select class="form-select form-select-sm attendance-status" name="statuses[]">
+                                            <option value="">-</option>
+                                            <option value="Present">حاضر</option>
+                                            <option value="Absent">غائب</option>
+                                            <option value="Late">متأخر</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="time" class="form-control form-control-sm" name="check_in_times[]">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm" name="notes[]" placeholder="ملاحظات...">
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ الحضور الجماعي</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Attendance Modals -->
+{% for record in attendance_records %}
+<div class="modal fade" id="editAttendanceModal{{ record.attendance_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('attendance.update_attendance', id=record.attendance_id) }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل حضور: {{ record.child_name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">اسم الطفل</label>
+                            <select class="form-select" name="child_id">
+                                {% for child in children %}
+                                <option value="{{ child.child_id }}" 
+                                        {% if child.child_id == record.child_id %}selected{% endif %}>
+                                    {{ child.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">التاريخ</label>
+                            <input type="date" class="form-control" name="date" value="{{ record.date }}">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">الحالة</label>
+                            <select class="form-select" name="status">
+                                <option value="Present" {% if record.status == 'Present' %}selected{% endif %}>حاضر</option>
+                                <option value="Absent" {% if record.status == 'Absent' %}selected{% endif %}>غائب</option>
+                                <option value="Late" {% if record.status == 'Late' %}selected{% endif %}>متأخر</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">وقت الوصول</label>
+                            <input type="time" class="form-control" name="check_in_time" value="{{ record.check_in_time or '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">وقت الانصراف</label>
+                            <input type="time" class="form-control" name="check_out_time" value="{{ record.check_out_time or '' }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ملاحظات</label>
+                        <textarea class="form-control" name="notes" rows="2">{{ record.notes or '' }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Attendance Modal -->
+<div class="modal fade" id="deleteAttendanceModal{{ record.attendance_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأكيد الحذف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">هل أنت متأكد من حذف سجل حضور <strong>"{{ record.child_name }}"</strong> بتاريخ <strong>"{{ record.date }}"</strong>؟</p>
+                <small class="text-muted">هذا الإجراء لا يمكن التراجع عنه.</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <a href="{{ url_for('attendance.delete_attendance', id=record.attendance_id) }}" class="btn btn-danger">حذف السجل</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // تعيين تاريخ اليوم بشكل افتراضي
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('date').value = today;
+    document.getElementById('bulk_date').value = today;
+    document.getElementById('dateFilter').value = today;
+    
+    // إضافة event listeners للنماذج
+    const addForm = document.getElementById('addAttendanceForm');
+    const bulkForm = document.getElementById('bulkAttendanceForm');
+    
+    if (addForm) {
+        addForm.addEventListener('submit', function(e) {
+            // التحقق من وجود البيانات المطلوبة
+            const childId = document.getElementById('child_id').value;
+            const date = document.getElementById('date').value;
+            const status = document.getElementById('status').value;
+            
+            if (!childId || !date || !status) {
+                e.preventDefault();
+                alert('يرجى ملء جميع الحقول المطلوبة');
+                return false;
+            }
+        });
+    }
+    
+    if (bulkForm) {
+        bulkForm.addEventListener('submit', function(e) {
+            const date = document.getElementById('bulk_date').value;
+            const statuses = document.querySelectorAll('.attendance-status');
+            let hasSelection = false;
+            
+            statuses.forEach(status => {
+                if (status.value) {
+                    hasSelection = true;
+                }
+            });
+            
+            if (!date) {
+                e.preventDefault();
+                alert('يرجى تحديد التاريخ');
+                return false;
+            }
+            
+            if (!hasSelection) {
+                e.preventDefault();
+                alert('يرجى تحديد حالة واحدة على الأقل');
+                return false;
+            }
+        });
+    }
+    
+    // فلترة الجدول
+    const dateFilter = document.getElementById('dateFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const nameSearch = document.getElementById('nameSearch');
+    
+    function filterTable() {
+        const table = document.getElementById('attendanceTable');
+        if (!table) return;
+        
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        
+        for (let row of rows) {
+            let showRow = true;
+            const date = row.cells[3].textContent;
+            const status = row.cells[4].textContent.trim();
+            const name = row.cells[1].textContent.toLowerCase();
+            
+            if (dateFilter.value && date !== dateFilter.value) {
+                showRow = false;
+            }
+            
+            if (statusFilter.value && !status.includes(getStatusText(statusFilter.value))) {
+                showRow = false;
+            }
+            
+            if (nameSearch.value && !name.includes(nameSearch.value.toLowerCase())) {
+                showRow = false;
+            }
+            
+            row.style.display = showRow ? '' : 'none';
+        }
+    }
+    
+    function getStatusText(value) {
+        const statusMap = {
+            'Present': 'حاضر',
+            'Absent': 'غائب',
+            'Late': 'متأخر'
+        };
+        return statusMap[value] || value;
+    }
+    
+    if (dateFilter) dateFilter.addEventListener('change', filterTable);
+    if (statusFilter) statusFilter.addEventListener('change', filterTable);
+    if (nameSearch) nameSearch.addEventListener('keyup', filterTable);
+});
+
+// وظائف التسجيل الجماعي
+function markAll(status) {
+    const selects = document.querySelectorAll('.attendance-status');
+    selects.forEach(select => {
+        select.value = status;
+    });
+}
+
+function clearAll() {
+    const selects = document.querySelectorAll('.attendance-status');
+    selects.forEach(select => {
+        select.value = '';
+    });
+}
+
+function clearFilters() {
+    document.getElementById('dateFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('nameSearch').value = '';
+    if (typeof filterTable === 'function') {
+        filterTable();
+    }
+}
+
+function exportAttendance() {
+    const table = document.getElementById('attendanceTable');
+    if (!table) return;
+    
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('th, td');
+        const rowData = Array.from(cells).slice(0, -1).map(cell => {
+            return '"' + cell.textContent.trim().replace(/"/g, '""') + '"';
+        });
+        csv.push(rowData.join(','));
+    });
+    
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'attendance_report.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+}
+</script>
+{% endblock %}

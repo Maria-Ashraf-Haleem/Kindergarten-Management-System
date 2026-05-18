@@ -1,0 +1,586 @@
+{% extends 'base.html' %}
+
+{% block title %}إدارة الرسوم - نظام إدارة الحضانة{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h2 mb-0">إدارة الرسوم</h1>
+        <p class="text-muted">متابعة وإدارة رسوم الأطفال والمدفوعات</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFeeModal">
+            <i class="fas fa-plus me-2"></i>إضافة رسوم جديدة
+        </button>
+        <button type="button" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#paymentModal">
+            <i class="fas fa-credit-card me-2"></i>تسجيل دفعة
+        </button>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    {% set total_amount = fees|sum(attribute='amount') or 0 %}
+    {% set paid_amount = fees|selectattr('status', 'equalto', 'Paid')|sum(attribute='amount') or 0 %}
+    {% set pending_amount = fees|selectattr('status', 'equalto', 'Pending')|sum(attribute='amount') or 0 %}
+    {% set overdue_amount = fees|selectattr('status', 'equalto', 'Overdue')|sum(attribute='amount') or 0 %}
+    
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-money-bill-wave fa-2x mb-2"></i>
+                <h4 class="mb-0">{{ "%.2f"|format(total_amount) }}</h4>
+                <small>إجمالي الرسوم</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                <h4 class="mb-0">{{ "%.2f"|format(paid_amount) }}</h4>
+                <small>المدفوع</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-clock fa-2x mb-2"></i>
+                <h4 class="mb-0">{{ "%.2f"|format(pending_amount) }}</h4>
+                <small>المعلق</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                <h4 class="mb-0">{{ "%.2f"|format(overdue_amount) }}</h4>
+                <small>المتأخر</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <label class="form-label">فلترة بالحالة</label>
+                <select class="form-select" id="statusFilter">
+                    <option value="">جميع الحالات</option>
+                    <option value="Paid">مدفوعة</option>
+                    <option value="Pending">معلقة</option>
+                    <option value="Overdue">متأخرة</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">من تاريخ</label>
+                <input type="date" class="form-control" id="fromDate">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">إلى تاريخ</label>
+                <input type="date" class="form-control" id="toDate">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary me-2" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> مسح
+                </button>
+                <button type="button" class="btn btn-outline-primary" onclick="exportFees()">
+                    <i class="fas fa-download"></i> تصدير
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fees Table -->
+<div class="card">
+    <div class="card-body">
+        {% if fees %}
+        <div class="table-responsive">
+            <table class="table table-hover" id="feesTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>الرقم</th>
+                        <th>اسم الطفل</th>
+                        <th>المبلغ</th>
+                        <th>تاريخ الاستحقاق</th>
+                        <th>تاريخ الدفع</th>
+                        <th>طريقة الدفع</th>
+                        <th>الحالة</th>
+                        <th>ملاحظات</th>
+                        <th width="200">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fee in fees %}
+                    <tr>
+                        <td>{{ fee.fee_id }}</td>
+                        <td><strong>{{ fee.child_name or 'غير محدد' }}</strong></td>
+                        <td><strong class="text-primary">{{ "%.2f"|format(fee.amount) }} جنيه</strong></td>
+                        <td>{{ fee.due_date or 'غير محدد' }}</td>
+                        <td>{{ fee.paid_date or 'لم يدفع بعد' }}</td>
+                        <td>{{ fee.payment_method or 'غير محدد' }}</td>
+                        <td>
+                            {% if fee.status == 'Paid' %}
+                                <span class="badge bg-success">مدفوعة</span>
+                            {% elif fee.status == 'Pending' %}
+                                <span class="badge bg-warning">معلقة</span>
+                            {% elif fee.status == 'Overdue' %}
+                                <span class="badge bg-danger">متأخرة</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ fee.notes or '' }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                {% if fee.status != 'Paid' %}
+                                <button type="button" class="btn btn-sm btn-outline-success" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#payFeeModal{{ fee.fee_id }}"
+                                        title="دفع الرسوم">
+                                    <i class="fas fa-credit-card"></i>
+                                </button>
+                                {% endif %}
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editFeeModal{{ fee.fee_id }}"
+                                        title="تعديل">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteFeeModal{{ fee.fee_id }}"
+                                        title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-money-bill-wave fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">لا توجد رسوم مضافة بعد</h5>
+            <p class="text-muted">ابدأ بإضافة أول رسوم للأطفال</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Fee Modal -->
+<div class="modal fade" id="addFeeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('fee.add_fee') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة رسوم جديدة</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="child_id" class="form-label">اسم الطفل <span class="text-danger">*</span></label>
+                        <select class="form-select" id="child_id" name="child_id" required>
+                            <option value="">اختر الطفل</option>
+                            {% for child in children %}
+                            <option value="{{ child.child_id }}">{{ child.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="amount" class="form-label">المبلغ (بالجنيه) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" class="form-control" id="amount" name="amount" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="due_date" class="form-label">تاريخ الاستحقاق <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="due_date" name="due_date" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="status" class="form-label">الحالة</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="Pending">معلقة</option>
+                            <option value="Paid">مدفوعة</option>
+                            <option value="Overdue">متأخرة</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="payment_method" class="form-label">طريقة الدفع</label>
+                        <select class="form-select" id="payment_method" name="payment_method">
+                            <option value="">لم يحدد بعد</option>
+                            <option value="cash">نقدي</option>
+                            <option value="bank_transfer">تحويل بنكي</option>
+                            <option value="credit_card">بطاقة ائتمان</option>
+                            <option value="check">شيك</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">ملاحظات</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="أي ملاحظات إضافية..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ الرسوم</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Processing Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ url_for('fee.process_payments') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">تسجيل دفعة جماعية</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="payment_date" class="form-label">تاريخ الدفع <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="payment_date" name="payment_date" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="bulk_payment_method" class="form-label">طريقة الدفع</label>
+                            <select class="form-select" id="bulk_payment_method" name="payment_method">
+                                <option value="cash">نقدي</option>
+                                <option value="bank_transfer">تحويل بنكي</option>
+                                <option value="credit_card">بطاقة ائتمان</option>
+                                <option value="check">شيك</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex gap-2 mt-4">
+                                <button type="button" class="btn btn-sm btn-success" onclick="selectAll()">
+                                    تحديد الكل
+                                </button>
+                                <button type="button" class="btn btn-sm btn-secondary" onclick="clearSelection()">
+                                    إلغاء التحديد
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th width="50">
+                                        <input type="checkbox" class="form-check-input" id="selectAllFees" onchange="toggleAll(this)">
+                                    </th>
+                                    <th>اسم الطفل</th>
+                                    <th>المبلغ</th>
+                                    <th>تاريخ الاستحقاق</th>
+                                    <th>الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for fee in fees %}
+                                {% if fee.status != 'Paid' %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input fee-checkbox" 
+                                               name="fee_ids[]" value="{{ fee.fee_id }}">
+                                    </td>
+                                    <td><strong>{{ fee.child_name }}</strong></td>
+                                    <td><strong class="text-primary">{{ "%.2f"|format(fee.amount) }} جنيه</strong></td>
+                                    <td>{{ fee.due_date }}</td>
+                                    <td>
+                                        {% if fee.status == 'Pending' %}
+                                            <span class="badge bg-warning">معلقة</span>
+                                        {% elif fee.status == 'Overdue' %}
+                                            <span class="badge bg-danger">متأخرة</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label for="bulk_notes" class="form-label">ملاحظات الدفع</label>
+                        <textarea class="form-control" id="bulk_notes" name="notes" rows="2" placeholder="ملاحظات حول عملية الدفع..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success">تسجيل الدفعات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Individual Fee Modals (Pay, Edit, Delete) -->
+{% for fee in fees %}
+{% if fee.status != 'Paid' %}
+<div class="modal fade" id="payFeeModal{{ fee.fee_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('fee.pay_fee', id=fee.fee_id) }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">دفع رسوم: {{ fee.child_name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">المبلغ المطلوب</label>
+                            <input type="text" class="form-control" value="{{ fee.amount }} جنيه" readonly>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="paid_date" class="form-label">تاريخ الدفع <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="paid_date" name="paid_date" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="payment_method" class="form-label">طريقة الدفع <span class="text-danger">*</span></label>
+                        <select class="form-select" id="payment_method" name="payment_method" required>
+                            <option value="cash">نقدي</option>
+                            <option value="bank_transfer">تحويل بنكي</option>
+                            <option value="credit_card">بطاقة ائتمان</option>
+                            <option value="check">شيك</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="payment_notes" class="form-label">ملاحظات الدفع</label>
+                        <textarea class="form-control" id="payment_notes" name="notes" rows="2" placeholder="أي ملاحظات حول الدفع..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success">تأكيد الدفع</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Edit Fee Modal -->
+<div class="modal fade" id="editFeeModal{{ fee.fee_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('fee.update_fee', id=fee.fee_id) }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل رسوم: {{ fee.child_name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">اسم الطفل</label>
+                        <select class="form-select" name="child_id">
+                            {% for child in children %}
+                            <option value="{{ child.child_id }}" 
+                                    {% if child.child_id == fee.child_id %}selected{% endif %}>
+                                {{ child.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">المبلغ (بالجنيه)</label>
+                            <input type="number" step="0.01" class="form-control" name="amount" value="{{ fee.amount }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تاريخ الاستحقاق</label>
+                            <input type="date" class="form-control" name="due_date" value="{{ fee.due_date or '' }}">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الحالة</label>
+                            <select class="form-select" name="status">
+                                <option value="Pending" {% if fee.status == 'Pending' %}selected{% endif %}>معلقة</option>
+                                <option value="Paid" {% if fee.status == 'Paid' %}selected{% endif %}>مدفوعة</option>
+                                <option value="Overdue" {% if fee.status == 'Overdue' %}selected{% endif %}>متأخرة</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تاريخ الدفع</label>
+                            <input type="date" class="form-control" name="paid_date" value="{{ fee.paid_date or '' }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">طريقة الدفع</label>
+                        <select class="form-select" name="payment_method">
+                            <option value="">لم يحدد بعد</option>
+                            <option value="cash" {% if fee.payment_method == 'cash' %}selected{% endif %}>نقدي</option>
+                            <option value="bank_transfer" {% if fee.payment_method == 'bank_transfer' %}selected{% endif %}>تحويل بنكي</option>
+                            <option value="credit_card" {% if fee.payment_method == 'credit_card' %}selected{% endif %}>بطاقة ائتمان</option>
+                            <option value="check" {% if fee.payment_method == 'check' %}selected{% endif %}>شيك</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ملاحظات</label>
+                        <textarea class="form-control" name="notes" rows="2">{{ fee.notes or '' }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Fee Modal -->
+<div class="modal fade" id="deleteFeeModal{{ fee.fee_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأكيد الحذف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">هل أنت متأكد من حذف رسوم <strong>"{{ fee.child_name }}"</strong> بمبلغ <strong>"{{ fee.amount }} جنيه"</strong>؟</p>
+                <small class="text-muted">هذا الإجراء لا يمكن التراجع عنه.</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <a href="{{ url_for('fee.delete_fee', id=fee.fee_id) }}" class="btn btn-danger">حذف الرسوم</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // تعيين تاريخ اليوم بشكل افتراضي
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('payment_date').value = today;
+    
+    // فلترة الجدول
+    const statusFilter = document.getElementById('statusFilter');
+    const fromDate = document.getElementById('fromDate');
+    const toDate = document.getElementById('toDate');
+    
+    function filterTable() {
+        const table = document.getElementById('feesTable');
+        if (!table) return;
+        
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        
+        for (let row of rows) {
+            let showRow = true;
+            const status = row.cells[6].textContent.trim();
+            const dueDate = row.cells[3].textContent.trim();
+            
+            // فلترة بالحالة
+            if (statusFilter.value) {
+                const statusMap = {
+                    'Paid': 'مدفوعة',
+                    'Pending': 'معلقة',
+                    'Overdue': 'متأخرة'
+                };
+                if (!status.includes(statusMap[statusFilter.value])) {
+                    showRow = false;
+                }
+            }
+            
+            // فلترة بالتاريخ
+            if (fromDate.value && dueDate !== 'غير محدد') {
+                if (dueDate < fromDate.value) {
+                    showRow = false;
+                }
+            }
+            
+            if (toDate.value && dueDate !== 'غير محدد') {
+                if (dueDate > toDate.value) {
+                    showRow = false;
+                }
+            }
+            
+            row.style.display = showRow ? '' : 'none';
+        }
+    }
+    
+    statusFilter.addEventListener('change', filterTable);
+    fromDate.addEventListener('change', filterTable);
+    toDate.addEventListener('change', filterTable);
+});
+
+// وظائف التحديد الجماعي
+function toggleAll(checkbox) {
+    const checkboxes = document.querySelectorAll('.fee-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = checkbox.checked;
+    });
+}
+
+function selectAll() {
+    const checkboxes = document.querySelectorAll('.fee-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = true;
+    });
+    document.getElementById('selectAllFees').checked = true;
+}
+
+function clearSelection() {
+    const checkboxes = document.querySelectorAll('.fee-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = false;
+    });
+    document.getElementById('selectAllFees').checked = false;
+}
+
+function clearFilters() {
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('fromDate').value = '';
+    document.getElementById('toDate').value = '';
+    // Call filterTable function
+    const event = new Event('change');
+    document.getElementById('statusFilter').dispatchEvent(event);
+}
+
+function exportFees() {
+    const table = document.getElementById('feesTable');
+    if (!table) return;
+    
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('th, td');
+        const rowData = Array.from(cells).slice(0, -1).map(cell => {
+            return '"' + cell.textContent.trim().replace(/"/g, '""') + '"';
+        });
+        csv.push(rowData.join(','));
+    });
+    
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'fees_report.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+}
+</script>
+{% endblock %}
+
+{% block head_extra %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+{% endblock %}
