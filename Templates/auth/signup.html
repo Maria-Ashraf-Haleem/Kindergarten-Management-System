@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}إنشاء حساب - نظام إدارة الحضانة{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card signup-card">
+        <div class="auth-icon">
+            <i class="fas fa-user-plus"></i>
+        </div>
+
+        <h2>إنشاء حساب جديد</h2>
+        <p class="auth-subtitle">أنشئ حساب مسؤول لإدارة بيانات الحضانة</p>
+
+        <form action="{{ url_for('auth.signup') }}" method="POST">
+            <div class="mb-3 text-start">
+                <label class="form-label">الاسم الكامل</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                    <input type="text" name="full_name" class="form-control" placeholder="مثال: مدير الحضانة" required>
+                </div>
+            </div>
+
+            <div class="mb-3 text-start">
+                <label class="form-label">البريد الإلكتروني</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                    <input type="email" name="email" class="form-control" placeholder="example@email.com" required>
+                </div>
+            </div>
+
+            <div class="mb-3 text-start">
+                <label class="form-label">كلمة المرور</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                    <input type="password" name="password" class="form-control" placeholder="على الأقل 6 أحرف" required>
+                </div>
+            </div>
+
+            <div class="mb-4 text-start">
+                <label class="form-label">تأكيد كلمة المرور</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-check-circle"></i></span>
+                    <input type="password" name="confirm_password" class="form-control" placeholder="أعد كتابة كلمة المرور" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 auth-btn">
+                <i class="fas fa-user-plus me-2"></i>إنشاء الحساب
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            لديك حساب بالفعل؟
+            <a href="{{ url_for('auth.login') }}">تسجيل الدخول</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

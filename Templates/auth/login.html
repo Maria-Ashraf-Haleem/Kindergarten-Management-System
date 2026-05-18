@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}تسجيل الدخول - نظام إدارة الحضانة{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-icon">
+            <i class="fas fa-school"></i>
+        </div>
+
+        <h2>تسجيل الدخول</h2>
+        <p class="auth-subtitle">مرحباً بك في نظام إدارة حضانة الأمل</p>
+
+        <form action="{{ url_for('auth.login') }}" method="POST">
+            <div class="mb-3 text-start">
+                <label class="form-label">البريد الإلكتروني</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                    <input type="email" name="email" class="form-control" placeholder="example@email.com" required>
+                </div>
+            </div>
+
+            <div class="mb-4 text-start">
+                <label class="form-label">كلمة المرور</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                    <input type="password" name="password" class="form-control" placeholder="أدخل كلمة المرور" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 auth-btn">
+                <i class="fas fa-sign-in-alt me-2"></i>دخول
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            ليس لديك حساب؟
+            <a href="{{ url_for('auth.signup') }}">إنشاء حساب جديد</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
