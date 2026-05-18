@@ -72,6 +72,37 @@ def time_ago_filter(timestamp):
     else:
         return f'منذ {int(days)} يوم'
 
+@app.template_filter('format_date')
+def format_date(value):
+    if not value:
+        return 'غير محدد'
+
+    try:
+        return value.strftime('%Y-%m-%d')
+    except AttributeError:
+        return str(value)[:10]
+
+
+@app.template_filter('input_date')
+def input_date(value):
+    if not value:
+        return ''
+
+    try:
+        return value.strftime('%Y-%m-%d')
+    except AttributeError:
+        return str(value)[:10]
+
+
+@app.template_filter('input_time')
+def input_time(value):
+    if not value:
+        return ''
+
+    try:
+        return value.strftime('%H:%M')
+    except AttributeError:
+        return str(value)[:5]
 
 @app.before_request
 def require_login():
