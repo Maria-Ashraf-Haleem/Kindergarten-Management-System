@@ -135,8 +135,53 @@ def index():
 
     recent_activities = []
 
-    return render_template('index.html', stats=stats, recent_activities=recent_activities)
+    latest_children = Child.query.filter_by(user_id=user_id).order_by(Child.created_at.desc()).limit(3).all()
+    for child in latest_children:
+        recent_activities.append({
+            'icon': 'fa-child',
+            'color': 'primary',
+            'title': f'تم إضافة طفل: {child.first_name} {child.last_name}',
+            'time': child.created_at
+        })
 
+    latest_parents = Parent.query.filter_by(user_id=user_id).order_by(Parent.created_at.desc()).limit(3).all()
+    for parent in latest_parents:
+        recent_activities.append({
+            'icon': 'fa-users',
+            'color': 'success',
+            'title': f'تم إضافة ولي أمر: {parent.first_name} {parent.last_name}',
+            'time': parent.created_at
+        })
+
+    latest_fees = Fee.query.filter_by(user_id=user_id).order_by(Fee.created_at.desc()).limit(3).all()
+    for fee in latest_fees:
+        recent_activities.append({
+            'icon': 'fa-money-bill-wave',
+            'color': 'warning',
+            'title': 'تم إضافة رسوم جديدة',
+            'time': fee.created_at
+        })
+
+    latest_attendance = Attendance.query.filter_by(user_id=user_id).order_by(Attendance.created_at.desc()).limit(3).all()
+    for attendance in latest_attendance:
+        recent_activities.append({
+            'icon': 'fa-calendar-check',
+            'color': 'info',
+            'title': 'تم تسجيل حضور جديد',
+            'time': attendance.created_at
+        })
+
+    recent_activities = sorted(
+        recent_activities,
+        key=lambda x: x['time'],
+        reverse=True
+    )[:6]
+
+    return render_template(
+        'index.html',
+        stats=stats,
+        recent_activities=recent_activities
+    )
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,7 +1,8 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from extensions import db
 
-
+def egypt_now():
+    return datetime.utcnow() + timedelta(hours=3)
 class Branch(db.Model):
     __tablename__ = 'branches'
 
@@ -11,7 +12,7 @@ class Branch(db.Model):
     name = db.Column(db.String(120), nullable=False)
     address = db.Column(db.String(255))
     phone = db.Column(db.String(30))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=egypt_now)
 
     classes = db.relationship('Class', back_populates='branch')
     staff_members = db.relationship('Staff', back_populates='branch')
@@ -27,7 +28,7 @@ class Class(db.Model):
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.branch_id'), nullable=True)
     max_capacity = db.Column(db.Integer, default=25)
     age_group = db.Column(db.String(80))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=egypt_now)
 
     branch = db.relationship('Branch', back_populates='classes')
     children = db.relationship('Child', back_populates='classroom')
@@ -45,7 +46,7 @@ class Parent(db.Model):
     email = db.Column(db.String(120))
     address = db.Column(db.String(255))
     emergency_contact = db.Column(db.String(30))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=egypt_now)
 
     children = db.relationship('Child', back_populates='parent')
 
@@ -65,7 +66,7 @@ class Child(db.Model):
     medical_info = db.Column(db.Text)
     enrollment_date = db.Column(db.Date, default=date.today)
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=egypt_now)
 
     parent = db.relationship('Parent', back_populates='children')
     classroom = db.relationship('Class', back_populates='children')
@@ -88,7 +89,7 @@ class Staff(db.Model):
     hire_date = db.Column(db.Date, default=date.today)
     salary = db.Column(db.Numeric(10, 2))
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=egypt_now)
 
     branch = db.relationship('Branch', back_populates='staff_members')
 
@@ -105,7 +106,7 @@ class Attendance(db.Model):
     check_in_time = db.Column(db.Time)
     check_out_time = db.Column(db.Time)
     notes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=egypt_now)
 
     child = db.relationship('Child', back_populates='attendance_records')
 
@@ -123,7 +124,7 @@ class Fee(db.Model):
     status = db.Column(db.String(20), default='Pending')
     payment_method = db.Column(db.String(50))
     notes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=egypt_now)
 
     child = db.relationship('Child', back_populates='fees')
 
@@ -136,7 +137,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(30), default='admin')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=egypt_now)
 
     branches = db.relationship('Branch', backref='owner')
     classes = db.relationship('Class', backref='owner')
