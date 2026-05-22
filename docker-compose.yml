@@ -7,13 +7,13 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: nursery_db
       MYSQL_USER: nursery_user
-      MYSQL_PASSWORD: nursery_password
+      MYSQL_PASSWORD: maria
     ports:
       - "3307:3306"
     volumes:
       - nursery_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "nursery_user", "-pnursery_password"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "nursery_user", "-pmaria"]
       interval: 10s
       timeout: 5s
       retries: 10
