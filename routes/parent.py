@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from extensions import db
 from models import Parent
 
@@ -7,8 +7,10 @@ parent_bp = Blueprint('parent', __name__)
 
 @parent_bp.route('/parents')
 def show_parents():
+    user_id = session['user_id']
+
     try:
-        parents = Parent.query.order_by(Parent.created_at.desc()).all()
+        parents = Parent.query.filter_by(user_id=user_id).order_by(Parent.created_at.desc()).all()
     except Exception as e:
         flash(f'خطأ في جلب البيانات: {str(e)}', 'error')
         parents = []
@@ -18,6 +20,8 @@ def show_parents():
 
 @parent_bp.route('/add_parent', methods=['POST'])
 def add_parent():
+    user_id = session['user_id']
+
     first_name = request.form.get('first_name', '').strip()
     last_name = request.form.get('last_name', '').strip()
     phone = request.form.get('phone', '').strip()
@@ -33,7 +37,8 @@ def add_parent():
         last_name=last_name,
         phone=phone or None,
         email=email or None,
-        address=address or None
+        address=address or None,
+        user_id=user_id
     )
 
     try:
@@ -49,7 +54,9 @@ def add_parent():
 
 @parent_bp.route('/update_parent/<int:id>', methods=['POST'])
 def update_parent(id):
-    parent = Parent.query.get(id)
+    user_id = session['user_id']
+
+    parent = Parent.query.filter_by(parent_id=id, user_id=user_id).first()
 
     if not parent:
         flash('ولي الأمر غير موجود!', 'error')
@@ -83,7 +90,9 @@ def update_parent(id):
 
 @parent_bp.route('/delete_parent/<int:id>')
 def delete_parent(id):
-    parent = Parent.query.get(id)
+    user_id = session['user_id']
+
+    parent = Parent.query.filter_by(parent_id=id, user_id=user_id).first()
 
     if not parent:
         flash('ولي الأمر غير موجود!', 'error')

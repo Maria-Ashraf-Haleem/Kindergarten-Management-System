@@ -1,0 +1,39 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: nursery_mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: nursery_db
+      MYSQL_USER: nursery_user
+      MYSQL_PASSWORD: nursery_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - nursery_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "nursery_user", "-pnursery_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    container_name: nursery_flask_app
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SECRET_KEY: nursery-docker-secret-key
+      DATABASE_URL: mysql+pymysql://nursery_user:maria@db:3306/nursery_db
+      FLASK_APP: app.py
+      FLASK_DEBUG: 1
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+
+volumes:
+  nursery_mysql_data:

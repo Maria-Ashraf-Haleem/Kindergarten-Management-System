@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from extensions import db
 from models import Child, Parent, Class
 
@@ -18,10 +18,20 @@ def parse_date(value):
 
 @child_bp.route('/children')
 def show_children():
+    user_id = session['user_id']
+
     try:
-        children = Child.query.filter_by(is_active=True).order_by(Child.created_at.desc()).all()
-        parents = Parent.query.order_by(Parent.first_name.asc(), Parent.last_name.asc()).all()
-        classes = Class.query.order_by(Class.name.asc()).all()
+        children = Child.query.filter_by(
+            is_active=True,
+            user_id=user_id
+        ).order_by(Child.created_at.desc()).all()
+
+        parents = Parent.query.filter_by(user_id=user_id).order_by(
+            Parent.first_name.asc(),
+            Parent.last_name.asc()
+        ).all()
+
+        classes = Class.query.filter_by(user_id=user_id).order_by(Class.name.asc()).all()
 
         for child in children:
             child.parent_name = (
@@ -51,6 +61,8 @@ def show_children():
 
 @child_bp.route('/add_child', methods=['POST'])
 def add_child():
+    user_id = session['user_id']
+
     first_name = request.form.get('first_name', '').strip()
     last_name = request.form.get('last_name', '').strip()
     date_of_birth = request.form.get('date_of_birth', '').strip()
@@ -62,14 +74,34 @@ def add_child():
         flash('الاسم الأول والأخير مطلوبان!', 'error')
         return redirect(url_for('child.show_children'))
 
+    try:
+        parent_id = int(parent_id) if parent_id else None
+        class_id = int(class_id) if class_id else None
+    except ValueError:
+        flash('بيانات ولي الأمر أو الكلاس غير صحيحة.', 'error')
+        return redirect(url_for('child.show_children'))
+
+    if parent_id:
+        parent = Parent.query.filter_by(parent_id=parent_id, user_id=user_id).first()
+        if not parent:
+            flash('ولي الأمر غير موجود أو لا يخص هذا المستخدم.', 'error')
+            return redirect(url_for('child.show_children'))
+
+    if class_id:
+        classroom = Class.query.filter_by(class_id=class_id, user_id=user_id).first()
+        if not classroom:
+            flash('الكلاس غير موجود أو لا يخص هذا المستخدم.', 'error')
+            return redirect(url_for('child.show_children'))
+
     child = Child(
         first_name=first_name,
         last_name=last_name,
         date_of_birth=parse_date(date_of_birth),
         gender=gender,
-        parent_id=int(parent_id) if parent_id else None,
-        class_id=int(class_id) if class_id else None,
-        is_active=True
+        parent_id=parent_id,
+        class_id=class_id,
+        is_active=True,
+        user_id=user_id
     )
 
     try:
@@ -85,7 +117,9 @@ def add_child():
 
 @child_bp.route('/update_child/<int:id>', methods=['POST'])
 def update_child(id):
-    child = Child.query.get(id)
+    user_id = session['user_id']
+
+    child = Child.query.filter_by(child_id=id, user_id=user_id).first()
 
     if not child:
         flash('الطفل غير موجود!', 'error')
@@ -102,12 +136,31 @@ def update_child(id):
         flash('الاسم الأول والأخير مطلوبان!', 'error')
         return redirect(url_for('child.show_children'))
 
+    try:
+        parent_id = int(parent_id) if parent_id else None
+        class_id = int(class_id) if class_id else None
+    except ValueError:
+        flash('بيانات ولي الأمر أو الكلاس غير صحيحة.', 'error')
+        return redirect(url_for('child.show_children'))
+
+    if parent_id:
+        parent = Parent.query.filter_by(parent_id=parent_id, user_id=user_id).first()
+        if not parent:
+            flash('ولي الأمر غير موجود أو لا يخص هذا المستخدم.', 'error')
+            return redirect(url_for('child.show_children'))
+
+    if class_id:
+        classroom = Class.query.filter_by(class_id=class_id, user_id=user_id).first()
+        if not classroom:
+            flash('الكلاس غير موجود أو لا يخص هذا المستخدم.', 'error')
+            return redirect(url_for('child.show_children'))
+
     child.first_name = first_name
     child.last_name = last_name
     child.date_of_birth = parse_date(date_of_birth)
     child.gender = gender
-    child.parent_id = int(parent_id) if parent_id else None
-    child.class_id = int(class_id) if class_id else None
+    child.parent_id = parent_id
+    child.class_id = class_id
 
     try:
         db.session.commit()
@@ -121,7 +174,9 @@ def update_child(id):
 
 @child_bp.route('/delete_child/<int:id>')
 def delete_child(id):
-    child = Child.query.get(id)
+    user_id = session['user_id']
+
+    child = Child.query.filter_by(child_id=id, user_id=user_id).first()
 
     if not child:
         flash('الطفل غير موجود!', 'error')

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from extensions import db
 from models import Staff, Branch
 
@@ -7,9 +7,11 @@ staff_bp = Blueprint('staff', __name__)
 
 @staff_bp.route('/staff')
 def show_staff():
+    user_id = session['user_id']
+
     try:
-        staff = Staff.query.order_by(Staff.created_at.desc()).all()
-        branches = Branch.query.order_by(Branch.name.asc()).all()
+        staff = Staff.query.filter_by(user_id=user_id).order_by(Staff.created_at.desc()).all()
+        branches = Branch.query.filter_by(user_id=user_id).order_by(Branch.name.asc()).all()
 
         for staff_member in staff:
             staff_member.branch_name = staff_member.branch.name if staff_member.branch else 'غير محدد'
@@ -24,6 +26,8 @@ def show_staff():
 
 @staff_bp.route('/add_staff', methods=['POST'])
 def add_staff():
+    user_id = session['user_id']
+
     first_name = request.form.get('first_name', '').strip()
     last_name = request.form.get('last_name', '').strip()
     phone = request.form.get('phone', '').strip()
@@ -41,15 +45,24 @@ def add_staff():
         return redirect(url_for('staff.show_staff'))
 
     try:
+        branch_id = int(branch_id) if branch_id else None
+
+        if branch_id:
+            branch = Branch.query.filter_by(branch_id=branch_id, user_id=user_id).first()
+            if not branch:
+                flash('الفرع غير موجود أو لا يخص هذا المستخدم.', 'error')
+                return redirect(url_for('staff.show_staff'))
+
         staff_member = Staff(
             first_name=first_name,
             last_name=last_name,
             phone=phone or None,
             email=email or None,
             position=position,
-            branch_id=int(branch_id) if branch_id else None,
+            branch_id=branch_id,
             salary=float(salary) if salary else None,
-            is_active=True
+            is_active=True,
+            user_id=user_id
         )
 
         db.session.add(staff_member)
@@ -64,7 +77,9 @@ def add_staff():
 
 @staff_bp.route('/update_staff/<int:id>', methods=['POST'])
 def update_staff(id):
-    staff_member = Staff.query.get(id)
+    user_id = session['user_id']
+
+    staff_member = Staff.query.filter_by(staff_id=id, user_id=user_id).first()
 
     if not staff_member:
         flash('الموظف غير موجود!', 'error')
@@ -87,12 +102,20 @@ def update_staff(id):
         return redirect(url_for('staff.show_staff'))
 
     try:
+        branch_id = int(branch_id) if branch_id else None
+
+        if branch_id:
+            branch = Branch.query.filter_by(branch_id=branch_id, user_id=user_id).first()
+            if not branch:
+                flash('الفرع غير موجود أو لا يخص هذا المستخدم.', 'error')
+                return redirect(url_for('staff.show_staff'))
+
         staff_member.first_name = first_name
         staff_member.last_name = last_name
         staff_member.phone = phone or None
         staff_member.email = email or None
         staff_member.position = position
-        staff_member.branch_id = int(branch_id) if branch_id else None
+        staff_member.branch_id = branch_id
         staff_member.salary = float(salary) if salary else None
 
         db.session.commit()
@@ -106,7 +129,9 @@ def update_staff(id):
 
 @staff_bp.route('/delete_staff/<int:id>')
 def delete_staff(id):
-    staff_member = Staff.query.get(id)
+    user_id = session['user_id']
+
+    staff_member = Staff.query.filter_by(staff_id=id, user_id=user_id).first()
 
     if not staff_member:
         flash('الموظف غير موجود!', 'error')

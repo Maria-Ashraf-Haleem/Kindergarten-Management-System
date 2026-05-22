@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from extensions import db
 from models import Fee, Child
 
@@ -18,9 +18,17 @@ def parse_date(value):
 
 @fee_bp.route('/fees')
 def show_fees():
+    user_id = session['user_id']
+
     try:
-        fees = Fee.query.order_by(Fee.due_date.desc(), Fee.created_at.desc()).all()
-        children = Child.query.filter_by(is_active=True).order_by(Child.first_name.asc()).all()
+        fees = Fee.query.filter_by(user_id=user_id).order_by(
+            Fee.due_date.desc(),
+            Fee.created_at.desc()
+        ).all()
+
+        children = Child.query.filter_by(user_id=user_id, is_active=True).order_by(
+            Child.first_name.asc()
+        ).all()
 
         for fee in fees:
             fee.child_name = (
@@ -41,6 +49,8 @@ def show_fees():
 
 @fee_bp.route('/add_fee', methods=['POST'])
 def add_fee():
+    user_id = session['user_id']
+
     child_id = request.form.get('child_id')
     amount = request.form.get('amount')
     due_date = request.form.get('due_date')
@@ -53,13 +63,21 @@ def add_fee():
         return redirect(url_for('fee.show_fees'))
 
     try:
+        child_id = int(child_id)
+        child = Child.query.filter_by(child_id=child_id, user_id=user_id).first()
+
+        if not child:
+            flash('الطفل غير موجود أو لا يخص هذا المستخدم.', 'error')
+            return redirect(url_for('fee.show_fees'))
+
         fee = Fee(
-            child_id=int(child_id),
+            child_id=child_id,
             amount=float(amount),
             due_date=parse_date(due_date),
             status=status,
             payment_method=payment_method or None,
-            notes=notes or None
+            notes=notes or None,
+            user_id=user_id
         )
 
         db.session.add(fee)
@@ -74,7 +92,9 @@ def add_fee():
 
 @fee_bp.route('/update_fee/<int:id>', methods=['POST'])
 def update_fee(id):
-    fee = Fee.query.get(id)
+    user_id = session['user_id']
+
+    fee = Fee.query.filter_by(fee_id=id, user_id=user_id).first()
 
     if not fee:
         flash('الرسوم غير موجودة!', 'error')
@@ -93,7 +113,14 @@ def update_fee(id):
         return redirect(url_for('fee.show_fees'))
 
     try:
-        fee.child_id = int(child_id)
+        child_id = int(child_id)
+        child = Child.query.filter_by(child_id=child_id, user_id=user_id).first()
+
+        if not child:
+            flash('الطفل غير موجود أو لا يخص هذا المستخدم.', 'error')
+            return redirect(url_for('fee.show_fees'))
+
+        fee.child_id = child_id
         fee.amount = float(amount)
         fee.due_date = parse_date(due_date)
         fee.status = status
@@ -112,7 +139,9 @@ def update_fee(id):
 
 @fee_bp.route('/pay_fee/<int:id>', methods=['POST'])
 def pay_fee(id):
-    fee = Fee.query.get(id)
+    user_id = session['user_id']
+
+    fee = Fee.query.filter_by(fee_id=id, user_id=user_id).first()
 
     if not fee:
         flash('الرسوم غير موجودة!', 'error')
@@ -143,6 +172,8 @@ def pay_fee(id):
 
 @fee_bp.route('/process_payments', methods=['POST'])
 def process_payments():
+    user_id = session['user_id']
+
     fee_ids = request.form.getlist('fee_ids[]')
     payment_date = request.form.get('payment_date')
     payment_method = request.form.get('payment_method', '').strip()
@@ -152,17 +183,20 @@ def process_payments():
         flash('يجب اختيار رسوم للدفع وتحديد تاريخ وطريقة الدفع!', 'error')
         return redirect(url_for('fee.show_fees'))
 
+    success_count = 0
+
     try:
         for fee_id in fee_ids:
-            fee = Fee.query.get(int(fee_id))
+            fee = Fee.query.filter_by(fee_id=int(fee_id), user_id=user_id).first()
             if fee:
                 fee.status = 'Paid'
                 fee.paid_date = parse_date(payment_date)
                 fee.payment_method = payment_method
                 fee.notes = notes or None
+                success_count += 1
 
         db.session.commit()
-        flash(f'تم تسجيل دفع {len(fee_ids)} رسوم بنجاح!', 'success')
+        flash(f'تم تسجيل دفع {success_count} رسوم بنجاح!', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'خطأ في تسجيل الدفعات: {str(e)}', 'error')
@@ -172,7 +206,9 @@ def process_payments():
 
 @fee_bp.route('/delete_fee/<int:id>')
 def delete_fee(id):
-    fee = Fee.query.get(id)
+    user_id = session['user_id']
+
+    fee = Fee.query.filter_by(fee_id=id, user_id=user_id).first()
 
     if not fee:
         flash('الرسوم غير موجودة!', 'error')

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from extensions import db
 from models import Branch
 
@@ -7,8 +7,10 @@ branch_bp = Blueprint('branch', __name__)
 
 @branch_bp.route('/branches')
 def show_branches():
+    user_id = session['user_id']
+
     try:
-        branches = Branch.query.order_by(Branch.created_at.desc()).all()
+        branches = Branch.query.filter_by(user_id=user_id).order_by(Branch.created_at.desc()).all()
 
         for branch in branches:
             branch.classes_count = len(branch.classes)
@@ -23,6 +25,8 @@ def show_branches():
 
 @branch_bp.route('/add_branch', methods=['POST'])
 def add_branch():
+    user_id = session['user_id']
+
     name = request.form.get('name', '').strip()
     address = request.form.get('address', '').strip()
     phone = request.form.get('phone', '').strip()
@@ -31,7 +35,7 @@ def add_branch():
         flash('اسم الفرع مطلوب!', 'error')
         return redirect(url_for('branch.show_branches'))
 
-    existing_branch = Branch.query.filter_by(name=name).first()
+    existing_branch = Branch.query.filter_by(name=name, user_id=user_id).first()
     if existing_branch:
         flash(f'يوجد فرع بالاسم "{name}" مسبقاً!', 'error')
         return redirect(url_for('branch.show_branches'))
@@ -39,7 +43,8 @@ def add_branch():
     branch = Branch(
         name=name,
         address=address or None,
-        phone=phone or None
+        phone=phone or None,
+        user_id=user_id
     )
 
     try:
@@ -55,7 +60,9 @@ def add_branch():
 
 @branch_bp.route('/update_branch/<int:id>', methods=['POST'])
 def update_branch(id):
-    branch = Branch.query.get(id)
+    user_id = session['user_id']
+
+    branch = Branch.query.filter_by(branch_id=id, user_id=user_id).first()
 
     if not branch:
         flash('الفرع غير موجود!', 'error')
@@ -71,7 +78,8 @@ def update_branch(id):
 
     existing_branch = Branch.query.filter(
         Branch.name == name,
-        Branch.branch_id != id
+        Branch.branch_id != id,
+        Branch.user_id == user_id
     ).first()
 
     if existing_branch:
@@ -94,7 +102,9 @@ def update_branch(id):
 
 @branch_bp.route('/delete_branch/<int:id>')
 def delete_branch(id):
-    branch = Branch.query.get(id)
+    user_id = session['user_id']
+
+    branch = Branch.query.filter_by(branch_id=id, user_id=user_id).first()
 
     if not branch:
         flash('الفرع غير موجود!', 'error')

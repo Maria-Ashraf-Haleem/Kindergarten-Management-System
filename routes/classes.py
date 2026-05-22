@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from extensions import db
 from models import Class, Branch
 
@@ -7,9 +7,11 @@ classes_bp = Blueprint('classes', __name__)
 
 @classes_bp.route('/classes')
 def show_classes():
+    user_id = session['user_id']
+
     try:
-        classes = Class.query.order_by(Class.created_at.desc()).all()
-        branches = Branch.query.order_by(Branch.name.asc()).all()
+        classes = Class.query.filter_by(user_id=user_id).order_by(Class.created_at.desc()).all()
+        branches = Branch.query.filter_by(user_id=user_id).order_by(Branch.name.asc()).all()
 
         for classroom in classes:
             classroom.branch_name = classroom.branch.name if classroom.branch else None
@@ -24,6 +26,8 @@ def show_classes():
 
 @classes_bp.route('/add_class', methods=['POST'])
 def add_class():
+    user_id = session['user_id']
+
     name = request.form.get('name', '').strip()
     branch_id = request.form.get('branch_id')
     max_capacity = request.form.get('max_capacity', '25')
@@ -40,11 +44,18 @@ def add_class():
         flash('بيانات غير صحيحة في الفرع أو السعة.', 'error')
         return redirect(url_for('classes.show_classes'))
 
+    if branch_id:
+        branch = Branch.query.filter_by(branch_id=branch_id, user_id=user_id).first()
+        if not branch:
+            flash('الفرع غير موجود أو لا يخص هذا المستخدم.', 'error')
+            return redirect(url_for('classes.show_classes'))
+
     classroom = Class(
         name=name,
         branch_id=branch_id,
         max_capacity=max_capacity,
-        age_group=age_group or None
+        age_group=age_group or None,
+        user_id=user_id
     )
 
     try:
@@ -60,7 +71,9 @@ def add_class():
 
 @classes_bp.route('/update_class/<int:id>', methods=['POST'])
 def update_class(id):
-    classroom = Class.query.get(id)
+    user_id = session['user_id']
+
+    classroom = Class.query.filter_by(class_id=id, user_id=user_id).first()
 
     if not classroom:
         flash('الكلاس غير موجود!', 'error')
@@ -76,9 +89,18 @@ def update_class(id):
         return redirect(url_for('classes.show_classes'))
 
     try:
+        branch_id = int(branch_id) if branch_id else None
+        max_capacity = int(max_capacity) if max_capacity else 25
+
+        if branch_id:
+            branch = Branch.query.filter_by(branch_id=branch_id, user_id=user_id).first()
+            if not branch:
+                flash('الفرع غير موجود أو لا يخص هذا المستخدم.', 'error')
+                return redirect(url_for('classes.show_classes'))
+
         classroom.name = name
-        classroom.branch_id = int(branch_id) if branch_id else None
-        classroom.max_capacity = int(max_capacity) if max_capacity else 25
+        classroom.branch_id = branch_id
+        classroom.max_capacity = max_capacity
         classroom.age_group = age_group or None
 
         db.session.commit()
@@ -92,7 +114,9 @@ def update_class(id):
 
 @classes_bp.route('/delete_class/<int:id>')
 def delete_class(id):
-    classroom = Class.query.get(id)
+    user_id = session['user_id']
+
+    classroom = Class.query.filter_by(class_id=id, user_id=user_id).first()
 
     if not classroom:
         flash('الكلاس غير موجود!', 'error')

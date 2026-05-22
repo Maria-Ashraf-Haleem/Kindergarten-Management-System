@@ -6,6 +6,8 @@ class Branch(db.Model):
     __tablename__ = 'branches'
 
     branch_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
+
     name = db.Column(db.String(120), nullable=False)
     address = db.Column(db.String(255))
     phone = db.Column(db.String(30))
@@ -19,6 +21,8 @@ class Class(db.Model):
     __tablename__ = 'classes'
 
     class_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
+
     name = db.Column(db.String(120), nullable=False)
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.branch_id'), nullable=True)
     max_capacity = db.Column(db.Integer, default=25)
@@ -33,6 +37,8 @@ class Parent(db.Model):
     __tablename__ = 'parents'
 
     parent_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
+
     first_name = db.Column(db.String(80), nullable=False)
     last_name = db.Column(db.String(80), nullable=False)
     phone = db.Column(db.String(30))
@@ -48,6 +54,8 @@ class Child(db.Model):
     __tablename__ = 'children'
 
     child_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
+
     first_name = db.Column(db.String(80), nullable=False)
     last_name = db.Column(db.String(80), nullable=False)
     date_of_birth = db.Column(db.Date)
@@ -69,6 +77,8 @@ class Staff(db.Model):
     __tablename__ = 'staff'
 
     staff_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
+
     first_name = db.Column(db.String(80), nullable=False)
     last_name = db.Column(db.String(80), nullable=False)
     position = db.Column(db.String(100), nullable=False)
@@ -87,6 +97,8 @@ class Attendance(db.Model):
     __tablename__ = 'attendance'
 
     attendance_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
+
     child_id = db.Column(db.Integer, db.ForeignKey('children.child_id'), nullable=False)
     date = db.Column(db.Date, nullable=False)
     status = db.Column(db.String(20), default='Present')
@@ -102,6 +114,8 @@ class Fee(db.Model):
     __tablename__ = 'fees'
 
     fee_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
+
     child_id = db.Column(db.Integer, db.ForeignKey('children.child_id'), nullable=False)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     due_date = db.Column(db.Date, nullable=False)
@@ -123,3 +137,11 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(30), default='admin')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    branches = db.relationship('Branch', backref='owner')
+    classes = db.relationship('Class', backref='owner')
+    parents = db.relationship('Parent', backref='owner')
+    children = db.relationship('Child', backref='owner')
+    staff_members = db.relationship('Staff', backref='owner')
+    attendance_records = db.relationship('Attendance', backref='owner')
+    fees = db.relationship('Fee', backref='owner')

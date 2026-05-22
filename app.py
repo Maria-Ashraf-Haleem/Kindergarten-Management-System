@@ -3,7 +3,17 @@ from datetime import datetime
 from flask import Flask, render_template, session, redirect, url_for, request
 from dotenv import load_dotenv
 
+from models import Branch, Class, Parent, Child, Staff, Attendance, Fee, User
 from extensions import db, migrate
+
+from routes.branch import branch_bp
+from routes.classes import classes_bp
+from routes.parent import parent_bp
+from routes.child import child_bp
+from routes.staff import staff_bp
+from routes.attendance import attendance_bp
+from routes.fee import fee_bp
+from routes.auth import auth_bp
 
 load_dotenv()
 
@@ -15,21 +25,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 migrate.init_app(app, db)
-
-# مهم: استيراد الموديلز عشان Flask-Migrate يشوف الجداول
-from models import Branch, Class, Parent, Child, Staff, Attendance, Fee, User
-
-
-# imports بتاعة الروترز
-from routers.routersbranch import branch_bp
-from routers.routersclasses import classes_bp
-from routers.routersparent import parent_bp
-from routers.routerschild import child_bp
-from routers.routersstaff import staff_bp
-from routers.routersattendance import attendance_bp
-from routers.routersfee import fee_bp
-from routers.auth import auth_bp
-
 
 app.register_blueprint(branch_bp)
 app.register_blueprint(classes_bp)
@@ -72,6 +67,7 @@ def time_ago_filter(timestamp):
     else:
         return f'منذ {int(days)} يوم'
 
+
 @app.template_filter('format_date')
 def format_date(value):
     if not value:
@@ -104,6 +100,7 @@ def input_time(value):
     except AttributeError:
         return str(value)[:5]
 
+
 @app.before_request
 def require_login():
     if request.endpoint is None:
@@ -124,14 +121,16 @@ def require_login():
 
 @app.route('/')
 def index():
+    user_id = session['user_id']
+
     stats = {
-        'branches': Branch.query.count(),
-        'classes': Class.query.count(),
-        'children': Child.query.filter_by(is_active=True).count(),
-        'parents': Parent.query.count(),
-        'staff': Staff.query.filter_by(is_active=True).count(),
-        'today_attendance': Attendance.query.filter_by(date=datetime.now().date()).count(),
-        'fees': Fee.query.count()
+        'branches': Branch.query.filter_by(user_id=user_id).count(),
+        'classes': Class.query.filter_by(user_id=user_id).count(),
+        'children': Child.query.filter_by(user_id=user_id, is_active=True).count(),
+        'parents': Parent.query.filter_by(user_id=user_id).count(),
+        'staff': Staff.query.filter_by(user_id=user_id, is_active=True).count(),
+        'today_attendance': Attendance.query.filter_by(user_id=user_id, date=datetime.now().date()).count(),
+        'fees': Fee.query.filter_by(user_id=user_id).count()
     }
 
     recent_activities = []
