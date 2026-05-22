@@ -234,16 +234,16 @@ Kindergarten-Management-System
 ├── .gitignore
 ├── .env.example
 │
-├── routers
+├── routes
 │   ├── __init__.py
 │   ├── auth.py
-│   ├── routersattendance.py
-│   ├── routersbranch.py
-│   ├── routerschild.py
-│   ├── routersclasses.py
-│   ├── routersfee.py
-│   ├── routersparent.py
-│   └── routersstaff.py
+│   ├── attendance.py
+│   ├── branch.py
+│   ├── child.py
+│   ├── classes.py
+│   ├── fee.py
+│   ├── parent.py
+│   └── staff.py
 │
 ├── templates
 │   ├── base.html
